@@ -256,7 +256,10 @@
 <body>
     <header>
         <div class="logo">
-            <img src="{{ public_path('logo-inoodex.png') }}" alt="logo" style="width: 100px; height: 100px;">
+            {{-- <img src="{{ public_path('logo-inoodex.png') }}" --}}
+            @if (!empty($company_logo))
+                <img src="{{ $company_logo }}" alt="logo" style="width: 100px; height: 100px;">
+            @endif
         </div>
     </header>
 

@@ -26,7 +26,8 @@ class CompanyDetailController extends Controller
                 $query->where('is_default', $request->is_default === 'yes');
             })
             ->latest()
-            ->get();
+            ->paginate(10)
+            ->withQueryString();
 
         return view('frontend.pages.company-details.index', compact('companies'));
     }

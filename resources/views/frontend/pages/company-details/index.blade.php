@@ -64,7 +64,7 @@
                         <tbody>
                             @forelse ($companies as $company)
                                 <tr>
-                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ $companies->firstItem() + $loop->index }}</td>
                                     <td class="text-center align-middle">
                                         @if ($company->photo)
                                             <img src="{{ asset($company->photo) }}" alt="Logo" width="40"
@@ -130,6 +130,9 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+            <div class="card-footer bg-white">
+                {{ $companies->links('pagination::bootstrap-5') }}
             </div>
         </div>
     </div>

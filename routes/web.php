@@ -27,6 +27,7 @@ Route::middleware(['auth', 'role:Super Admin'])->group(function () {
 
     // Products
     Route::resource('products', ProductController::class);
+    Route::post('products/import', [ProductController::class, 'import'])->name('products.import');
 
     // Clients
     Route::resource('clients', ClientController::class);

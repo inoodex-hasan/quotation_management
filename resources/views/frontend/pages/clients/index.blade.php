@@ -109,7 +109,7 @@
                 </div>
             </div>
             <div class="card-footer bg-white">
-                {{ $clients->links() }}
+                {{ $clients->links('pagination::bootstrap-5') }}
             </div>
         </div>
     </div>

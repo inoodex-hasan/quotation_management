@@ -204,8 +204,13 @@
                                     {{ $signatories->count() ? 'Choose signatory...' : 'No user found. Please create user first.' }}
                                 </option>
                                 @foreach ($signatories as $signatory)
+                                    @php
+                                        $signatoryPhotoPath =
+                                            $signatory->photo ??
+                                            (!empty($signatory->images) ? 'frontend/users/' . $signatory->images : '');
+                                    @endphp
                                     <option value="{{ $signatory->id }}" data-name="{{ $signatory->name }}"
-                                        data-photo="{{ $signatory->images ? asset('frontend/users/' . $signatory->images) : '' }}"
+                                        data-photo="{{ $signatoryPhotoPath ? asset($signatoryPhotoPath) : '' }}"
                                         {{ (string) old('signatory_user_id') === (string) $signatory->id ? 'selected' : '' }}>
                                         {{ $signatory->name }}
                                     </option>
@@ -244,7 +249,7 @@
                                     <option value="{{ $product->id }}" data-name="{{ $product->name }}"
                                         data-description="{{ $product->details ?? 'description not available' }}"
                                         data-price="{{ $product->price ?? 0 }}">
-                                        {{ \Illuminate\Support\Str::limit($product->name, 25) }}
+                                        {{ \Illuminate\Support\Str::limit($product->name, 30) }}
                                     </option>
                                 @endforeach
                             </select>

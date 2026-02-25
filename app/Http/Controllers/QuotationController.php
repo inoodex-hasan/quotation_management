@@ -42,8 +42,12 @@ class QuotationController extends Controller
         $defaultCompany = Schema::hasTable('company_details')
             ? CompanyDetail::query()->where('is_default', true)->first()
             : null;
+        $userColumns = ['id', 'name', 'images'];
+        if (Schema::hasColumn('users', 'photo')) {
+            $userColumns[] = 'photo';
+        }
         $signatories = Schema::hasTable('users')
-            ? User::query()->orderBy('name')->get(['id', 'name', 'images'])
+            ? User::query()->orderBy('name')->get($userColumns)
             : collect();
         $products = Schema::hasTable('products')
             ? Product::query()->get()
@@ -53,79 +57,86 @@ class QuotationController extends Controller
     }
 
     public function store(Request $request)
-    {
-        // Backward compatibility: map legacy/misspelled overall discount keys.
-        if (!$request->has('discount_amount')) {
-            $fallbackDiscount = $request->input('overall_discount', $request->input('overall_disocunt'));
-            if ($fallbackDiscount !== null) {
-                $request->merge(['discount_amount' => $fallbackDiscount]);
-            }
+{
+    // Backward compatibility for legacy discount keys
+    if (!$request->has('discount_amount')) {
+        $fallbackDiscount = $request->input('overall_discount', $request->input('overall_disocunt'));
+        if ($fallbackDiscount !== null) {
+            $request->merge(['discount_amount' => $fallbackDiscount]);
         }
+    }
 
-        $rules = [
-            'client_mode' => 'required|in:existing,new',
-            'client_id' => 'nullable|integer',
-            'client_name' => 'nullable|string|max:255',
-            'client_designation' => 'nullable|string|max:255',
-            'client_address' => 'nullable|string',
-            'client_phone' => 'nullable|string|max:20',
-            'client_email' => 'nullable|email|max:255',
-            'attention_to' => 'nullable|string|max:255',
-            'body_content' => 'nullable|string',
-            'terms_conditions' => 'required|string',
-            'subject' => 'nullable|string|max:255',
-            'company_name' => 'required|string|max:255',
-            'signatory_user_id' => 'required|integer|exists:users,id',
-            'signatory_name' => 'nullable|string|max:255',
-            'company_phone' => 'nullable|string|max:20',
-            'company_email' => 'nullable|email|max:255',
-            'company_website' => 'nullable|string|max:255',
-            'company_address' => 'nullable|string',
-            'additional_enclosed' => 'nullable|string',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'vat_percent' => 'nullable|numeric|min:0',
-            'tax_percent' => 'nullable|numeric|min:0',
-            'installation_charge' => 'nullable|numeric|min:0',
-            'round_off' => 'nullable|numeric|min:0',
-            'items' => 'required|array|min:1',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.unit_price' => 'required|numeric|min:0',
-            'items.*.discount_amount' => 'nullable|numeric|min:0',
-            'items.*.description' => 'nullable|string',
-        ];
+    // Get default company and logo
+    $defaultCompany = CompanyDetail::where('is_default', true)->first();
+    $companyLogo = $defaultCompany?->photo;
 
-        if (Schema::hasTable('clients')) {
-            $rules['client_id'] = 'nullable|integer|exists:clients,id';
-        }
+    // Validation rules
+    $rules = [
+        'client_mode' => 'required|in:existing,new',
+        'client_id' => 'nullable|integer',
+        'client_name' => 'nullable|string|max:255',
+        'client_designation' => 'nullable|string|max:255',
+        'client_address' => 'nullable|string',
+        'client_phone' => 'nullable|string|max:20',
+        'client_email' => 'nullable|email|max:255',
+        'attention_to' => 'nullable|string|max:255',
+        'body_content' => 'nullable|string',
+        'terms_conditions' => 'required|string',
+        'subject' => 'nullable|string|max:255',
+        'company_name' => 'required|string|max:255',
+        'signatory_user_id' => 'required|integer|exists:users,id',
+        'company_phone' => 'nullable|string|max:20',
+        'company_email' => 'nullable|email|max:255',
+        'company_website' => 'nullable|string|max:255',
+        'company_address' => 'nullable|string',
+        'additional_enclosed' => 'nullable|string',
+        'discount_amount' => 'nullable|numeric|min:0',
+        'vat_percent' => 'nullable|numeric|min:0',
+        'tax_percent' => 'nullable|numeric|min:0',
+        'installation_charge' => 'nullable|numeric|min:0',
+        'round_off' => 'nullable|numeric|min:0',
+        'items' => 'required|array|min:1',
+        'items.*.product_id' => 'required|exists:products,id',
+        'items.*.quantity' => 'required|integer|min:1',
+        'items.*.unit_price' => 'required|numeric|min:0',
+        'items.*.discount_amount' => 'nullable|numeric|min:0',
+        'items.*.description' => 'nullable|string',
+    ];
 
-        if (($request->input('client_mode') ?? 'new') === 'existing') {
-            $rules['client_id'] = 'required|integer|exists:clients,id';
-        } else {
-            $rules['client_name'] = 'required|string|max:255';
-            $rules['client_address'] = 'required|string';
-        }
+    if (Schema::hasTable('clients')) {
+        $rules['client_id'] = 'nullable|integer|exists:clients,id';
+    }
 
-        $validated = $request->validate($rules);
+    if (($request->input('client_mode') ?? 'new') === 'existing') {
+        $rules['client_id'] = 'required|integer|exists:clients,id';
+    } else {
+        $rules['client_name'] = 'required|string|max:255';
+        $rules['client_address'] = 'required|string';
+    }
 
-        try {
-        DB::transaction(function () use ($request, $validated) {
+    $validated = $request->validate($rules);
+
+    try {
+        DB::transaction(function () use ($request, $companyLogo) {
+            // Prepare client data
             $clientId = null;
-            $clientName = (string)($request->client_name ?? '');
-            $clientAddress = (string)($request->client_address ?? '');
-            $clientPhone = (string)($request->client_phone ?? '');
-            $clientEmail = (string)($request->client_email ?? '');
-            $signatoryUser = User::query()->findOrFail($request->signatory_user_id);
+            $clientName = $request->client_name ?? '';
+            $clientAddress = $request->client_address ?? '';
+            $clientPhone = $request->client_phone ?? '';
+            $clientEmail = $request->client_email ?? '';
+
+            // Signatory info
+            $signatoryUser = User::findOrFail($request->signatory_user_id);
             $signatoryName = $signatoryUser->name;
-            $signatoryDesignation = (string) optional($signatoryUser->roles()->orderBy('name')->first())->name;
+            $signatoryDesignation = optional($signatoryUser->roles()->orderBy('name')->first())->name ?? '';
             $signatoryPhoto = null;
-            if (!empty($signatoryUser->images)) {
-                $photoPath = public_path('frontend/users/' . $signatoryUser->images);
-                if (file_exists($photoPath)) {
-                    $signatoryPhoto = $photoPath;
-                }
+            if (!empty($signatoryUser->photo)) {
+                $signatoryPhoto = $signatoryUser->photo;
+            } elseif (!empty($signatoryUser->images)) {
+                $signatoryPhoto = 'frontend/users/' . $signatoryUser->images;
             }
 
+            // Handle client selection
             if (($request->input('client_mode') ?? 'new') === 'existing') {
                 $client = Client::findOrFail($request->client_id);
                 $clientId = $client->id;
@@ -134,19 +145,16 @@ class QuotationController extends Controller
                 $clientPhone = $client->phone ?? '';
                 $clientEmail = $client->email ?? '';
             } else {
-                if (!Schema::hasTable('clients')) {
-                    throw new \RuntimeException('Clients table not found.');
-                }
-
                 $client = Client::create([
-                    'name' => $request->client_name,
-                    'phone' => $request->client_phone ?: '-',
-                    'email' => $request->client_email ?: ('no-email-' . now()->timestamp . '@local.test'),
-                    'address' => $request->client_address,
+                    'name' => $clientName,
+                    'phone' => $clientPhone ?: '-',
+                    'email' => $clientEmail ?: ('no-email-' . now()->timestamp . '@local.test'),
+                    'address' => $clientAddress,
                 ]);
                 $clientId = $client->id;
             }
 
+            // Calculate totals
             $subTotal = 0;
             foreach ($request->items as $item) {
                 $lineTotal = $item['quantity'] * $item['unit_price'];
@@ -154,8 +162,7 @@ class QuotationController extends Controller
                 $subTotal += ($lineTotal - $lineDiscount);
             }
 
-            $discountAmount = (float)($request->discount_amount ?? 0);
-            $discountAmount = min($subTotal, $discountAmount);
+            $discountAmount = min($subTotal, (float)($request->discount_amount ?? 0));
             $vatPercent = (float)($request->vat_percent ?? 0);
             $taxPercent = (float)($request->tax_percent ?? 0);
             $installationCharge = (float)($request->installation_charge ?? 0);
@@ -166,7 +173,7 @@ class QuotationController extends Controller
             $taxAmount = $totalAfterDiscount * ($taxPercent / 100);
             $totalAmount = $totalAfterDiscount + $vatAmount + $taxAmount + $installationCharge - $roundOff;
 
-            // Create quotation
+            // Create quotation with snapshot fields
             $quotation = Quotation::create([
                 'client_id' => $clientId,
                 'quotation_date' => now(),
@@ -182,25 +189,8 @@ class QuotationController extends Controller
                 'round_off' => $roundOff,
                 'total_amount' => $totalAmount,
                 'status' => 'draft',
-            ]);
 
-            // Create quotation items
-            foreach ($request->items as $item) {
-                $lineTotal = $item['quantity'] * $item['unit_price'];
-                $lineDiscount = min($lineTotal, (float)($item['discount_amount'] ?? 0));
-                $netTotal = $lineTotal - $lineDiscount;
-                QuotationItem::create([
-                    'quotation_id' => $quotation->id,
-                    'product_id' => $item['product_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                    'total' => $netTotal,
-                    'description' => $item['description'] ?? null,
-                ]);
-            }
-
-            // Store PDF data (for manual input fields)
-            $pdfData = [
+                // PDF snapshot fields
                 'client_name' => $clientName,
                 'client_designation' => $request->client_designation,
                 'client_address' => $clientAddress,
@@ -211,33 +201,43 @@ class QuotationController extends Controller
                 'terms_conditions' => $request->terms_conditions,
                 'subject' => $request->subject,
                 'company_name' => $request->company_name,
-                'signatory_user_id' => $signatoryUser->id,
-                'signatory_name' => $signatoryName,
-                'signatory_designation' => $signatoryDesignation,
-                'signatory_photo' => $signatoryPhoto,
                 'company_phone' => $request->company_phone,
                 'company_email' => $request->company_email,
                 'company_website' => $request->company_website,
                 'company_address' => $request->company_address,
+                'logo' => $companyLogo,
+                'signatory_name' => $signatoryName,
+                'signatory_designation' => $signatoryDesignation,
+                'signatory_photo' => $signatoryPhoto,
                 'additional_enclosed' => $request->additional_enclosed,
-                'vat_percent' => $vatPercent,
-                'tax_percent' => $taxPercent,
-                'vat_amount' => $vatAmount,
-                'tax_amount' => $taxAmount,
-                'installation_charge' => $installationCharge,
-                'round_off' => $roundOff,
-            ];
+            ]);
 
-            session(['quotation_pdf_data_' . $quotation->id => $pdfData]);
+            // Create quotation items
+            foreach ($request->items as $item) {
+                $lineTotal = $item['quantity'] * $item['unit_price'];
+                $lineDiscount = min($lineTotal, (float)($item['discount_amount'] ?? 0));
+                $netTotal = $lineTotal - $lineDiscount;
+
+                QuotationItem::create([
+                    'quotation_id' => $quotation->id,
+                    'product_id' => $item['product_id'],
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'total' => $netTotal,
+                    'description' => $item['description'] ?? null,
+                ]);
+            }
         });
-        } catch (QueryException $e) {
-            return back()->withInput()->with('warning', 'Unable to save quotation right now. Please check client setup and try again.');
-        } catch (\Throwable $e) {
-            return back()->withInput()->with('warning', 'Unable to save quotation right now. Please check client information and try again.');
-        }
 
-        return redirect()->route('quotations.index')->with('success', 'Quotation created successfully.');
+    } catch (QueryException $e) {
+        return back()->withInput()->with('warning', 'Unable to save quotation right now. Please check client setup and try again.');
+    } catch (\Throwable $e) {
+        return back()->withInput()->with('warning', 'Unable to save quotation right now. Please check client information and try again.');
     }
+
+    return redirect()->route('quotations.index')->with('success', 'Quotation created successfully.');
+}
+
     public function show(Quotation $quotation)
     {
         $attention_to = $quotation->attention_to;
@@ -333,54 +333,100 @@ class QuotationController extends Controller
     }
 
     public function generatePDF(Quotation $quotation)
-    {
-        $quotation->load(['items.product']);
+{
+    $quotation->load(['items.product', 'client']);
 
-        $pdfData = session('quotation_pdf_data_' . $quotation->id, []);
-        $defaultCompany = Schema::hasTable('company_details')
-            ? CompanyDetail::query()->where('is_default', true)->first()
-            : null;
-        $signatoryDesignation = $pdfData['signatory_designation'] ?? '';
-        if ($signatoryDesignation === '' && !empty($pdfData['signatory_user_id'])) {
-            $signatoryDesignation = (string) optional(
-                User::query()->find($pdfData['signatory_user_id'])?->roles()->orderBy('name')->first()
-            )->name;
+    $amount_in_words = $this->convertNumberToWords($quotation->total_amount) . ' Taka Only';
+
+    $defaultCompany = CompanyDetail::where('is_default', true)->first();
+    $companyLogo = $this->resolvePublicFilePath($quotation->logo ?: ($defaultCompany->photo ?? null));
+
+    $signatoryPhotoRaw = $quotation->signatory_photo;
+    if (empty($signatoryPhotoRaw) && !empty($quotation->signatory_user_id)) {
+        $signatoryUser = User::find($quotation->signatory_user_id);
+        if ($signatoryUser) {
+            if (!empty($signatoryUser->photo)) {
+                $signatoryPhotoRaw = $signatoryUser->photo;
+            } elseif (!empty($signatoryUser->images)) {
+                $signatoryPhotoRaw = 'frontend/users/' . $signatoryUser->images;
+            }
+        }
+    }
+    $signatoryPhoto = $this->resolvePublicFilePath($signatoryPhotoRaw);
+
+    $data = [
+        'quotation' => $quotation,
+        'amount_in_words' => $amount_in_words,
+
+        // Client snapshot
+        'client_name' => $quotation->client_name,
+        'client_designation' => $quotation->client_designation,
+        'client_address' => $quotation->client_address,
+        'client_phone' => $quotation->client_phone,
+        'client_email' => $quotation->client_email,
+
+        // PDF content
+        'attention_to' => $quotation->attention_to,
+        'body_content' => $quotation->body_content,
+        'terms_conditions' => $quotation->terms_conditions,
+        'subject' => $quotation->subject,
+
+        // Company snapshot
+        'company_name' => $quotation->company_name,
+        'company_phone' => $quotation->company_phone,
+        'company_email' => $quotation->company_email,
+        'company_website' => $quotation->company_website,
+        'company_address' => $quotation->company_address,
+        'company_logo' => $companyLogo,  // company logo
+
+        // Signatory snapshot
+        'signatory_name' => $quotation->signatory_name,
+        'signatory_designation' => $quotation->signatory_designation,
+        'signatory_photo' => $signatoryPhoto,
+
+        'additional_enclosed' => $quotation->additional_enclosed,
+    ];
+
+    $pdf = Pdf::loadView('pdf.quotations', $data);
+
+    return $pdf->download('quotation-' . $quotation->quotation_number . '.pdf');
+}
+
+    private function resolvePublicFilePath(?string $path): ?string
+    {
+        if (empty($path)) {
+            return null;
         }
 
-        $amount_in_words = $this->convertNumberToWords($quotation->total_amount) . ' Taka Only';
+        $path = trim($path);
+        if (preg_match('/^https?:\/\//i', $path)) {
+            $parsedPath = parse_url($path, PHP_URL_PATH);
+            if (!empty($parsedPath)) {
+                $path = $parsedPath;
+            }
+        }
 
-        $data = [
-            'quotation' => $quotation,
-            'amount_in_words' => $amount_in_words,
-            'client_name' => $pdfData['client_name'] ?? '',
-            'client_designation' => $pdfData['client_designation'] ?? '',
-            'client_address' => $pdfData['client_address'] ?? '',
-            'client_phone' => $pdfData['client_phone'] ?? '',
-            'client_email' => $pdfData['client_email'] ?? '',
-            'attention_to' => $pdfData['attention_to'] ?? '',
-            'body_content' => $pdfData['body_content'] ?? '',
-            'terms_conditions' => $pdfData['terms_conditions'] ?? '',
-            'subject' => $pdfData['subject'] ?? '',
-            'company_name' => $pdfData['company_name'] ?? ($defaultCompany->name ?? ''),
-            'signatory_name' => $pdfData['signatory_name'] ?? '',
-            'signatory_designation' => $signatoryDesignation,
-            'signatory_photo' => $pdfData['signatory_photo'] ?? '',
-            'company_phone' => $pdfData['company_phone'] ?? ($defaultCompany->phone ?? ''),
-            'company_email' => $pdfData['company_email'] ?? ($defaultCompany->email ?? ''),
-            'company_website' => $pdfData['company_website'] ?? ($defaultCompany->website ?? ''),
-            'company_address' => $pdfData['company_address'] ?? ($defaultCompany->address ?? ''),
-            'additional_enclosed' => $pdfData['additional_enclosed'] ?? '',
-        ];
+        $path = str_replace('\\', '/', $path);
+        $isAbsolute = preg_match('/^[A-Za-z]:\//', $path) === 1 || str_starts_with($path, '/');
+        $fullPath = $isAbsolute ? $path : public_path(ltrim($path, '/'));
 
-        $pdf = Pdf::loadView('pdf.quotations', $data);
-        return $pdf->download('quotation-' . $quotation->quotation_number . '.pdf');
+        return file_exists($fullPath) ? $fullPath : null;
     }
 
-    // public function previewPDF(Quotation $quotation)
+    // public function generatePDF(Quotation $quotation)
     // {
     //     $quotation->load(['items.product']);
 
     //     $pdfData = session('quotation_pdf_data_' . $quotation->id, []);
+    //     $defaultCompany = Schema::hasTable('company_details')
+    //         ? CompanyDetail::query()->where('is_default', true)->first()
+    //         : null;
+    //     $signatoryDesignation = $pdfData['signatory_designation'] ?? '';
+    //     if ($signatoryDesignation === '' && !empty($pdfData['signatory_user_id'])) {
+    //         $signatoryDesignation = (string) optional(
+    //             User::query()->find($pdfData['signatory_user_id'])?->roles()->orderBy('name')->first()
+    //         )->name;
+    //     }
 
     //     $amount_in_words = $this->convertNumberToWords($quotation->total_amount) . ' Taka Only';
 
@@ -396,18 +442,22 @@ class QuotationController extends Controller
     //         'body_content' => $pdfData['body_content'] ?? '',
     //         'terms_conditions' => $pdfData['terms_conditions'] ?? '',
     //         'subject' => $pdfData['subject'] ?? '',
-    //         'company_name' => $pdfData['company_name'] ?? '',
+    //         'company_name' => $pdfData['company_name'] ?? ($defaultCompany->name ?? ''),
     //         'signatory_name' => $pdfData['signatory_name'] ?? '',
+    //         'signatory_designation' => $signatoryDesignation,
     //         'signatory_photo' => $pdfData['signatory_photo'] ?? '',
-    //         'company_phone' => $pdfData['company_phone'] ?? '',
-    //         'company_email' => $pdfData['company_email'] ?? '',
-    //         'company_website' => $pdfData['company_website'] ?? '',
+    //         'company_phone' => $pdfData['company_phone'] ?? ($defaultCompany->phone ?? ''),
+    //         'company_email' => $pdfData['company_email'] ?? ($defaultCompany->email ?? ''),
+    //         'company_website' => $pdfData['company_website'] ?? ($defaultCompany->website ?? ''),
+    //         'company_address' => $pdfData['company_address'] ?? ($defaultCompany->address ?? ''),
+    //         'company_photo' => $defaultCompany->photo ?? '',
     //         'additional_enclosed' => $pdfData['additional_enclosed'] ?? '',
     //     ];
 
     //     $pdf = Pdf::loadView('pdf.quotations', $data);
-    //     return $pdf->stream('quotation-' . $quotation->quotation_number . '.pdf');
+    //     return $pdf->download('quotation-' . $quotation->quotation_number . '.pdf');
     // }
+
     public function sendQuotation(Quotation $quotation)
     {
         $quotation->update(['status' => 'sent']);

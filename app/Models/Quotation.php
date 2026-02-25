@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\{Model, SoftDeletes};
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
+
 
 class Quotation extends Model
 {
+
+    use SoftDeletes;
     protected $fillable = [
         'quotation_number',
         'client_id',
@@ -23,6 +26,27 @@ class Quotation extends Model
         'round_off',
         'total_amount',
         'status',
+
+        // PDF snapshot fields
+        'client_name',
+        'client_designation',
+        'client_address',
+        'client_phone',
+        'client_email',
+        'attention_to',
+        'body_content',
+        'terms_conditions',
+        'subject',
+        'company_name',
+        'company_phone',
+        'company_email',
+        'company_website',
+        'company_address',
+        'logo',
+        'signatory_name',
+        'signatory_designation',
+        'signatory_photo',
+        'additional_enclosed',
     ];
 
     protected $casts = [
@@ -58,21 +82,6 @@ class Quotation extends Model
         });
     }
 
-    // public static function generateQuotationNumber()
-    // {
-    //     $prefix = 'QT';
-    //     $year = date('Y');
-    //     $month = date('m');
-        
-    //     $lastQuotation = static::where('quotation_number', 'like', "{$prefix}{$year}{$month}%")
-    //         ->orderBy('id', 'desc')
-    //         ->first();
-
-    //     $sequence = $lastQuotation ? (int)substr($lastQuotation->quotation_number, -4) + 1 : 1;
-
-    //     return "{$prefix}{$year}{$month}" . str_pad($sequence, 4, '0', STR_PAD_LEFT);
-    // }
-
     public static function generateQuotationNumber()
 {
     $prefix = 'PK';
@@ -80,8 +89,9 @@ class Quotation extends Model
     
     // Search last quotation for today
     $lastQuotation = static::where('quotation_number', 'like', "{$prefix}-{$date}-%")
-        ->orderBy('id', 'desc')
-        ->first();
+    ->withTrashed() // include deleted quotations
+    ->orderBy('id', 'desc')
+    ->first();
 
     // Extract last 4 digits sequence
     $sequence = $lastQuotation 
