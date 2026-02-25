@@ -3,6 +3,10 @@
 @section('title', 'Create Quotation')
 
 @section('content')
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+
     <style>
         @media (min-width: 992px) {
             #items-table {
@@ -372,6 +376,10 @@
 @endsection
 
 @push('scripts')
+    <!-- jQuery and Select2 JS (in case not globally loaded) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <script>
         (function() {
             let rowIndex = 0;
@@ -617,6 +625,40 @@
             toggleClientMode();
             syncSignatoryData();
             recalcTotals();
+
+            // Initialize Select2 for dropdowns
+            if ($.fn.select2) {
+                const select2Options = {
+                    theme: 'bootstrap-5',
+                    allowClear: true,
+                    width: '100%'
+                };
+
+                // Client Select
+                $('#existing-client-select').select2({
+                    ...select2Options,
+                    placeholder: "Choose existing client..."
+                }).on('change', function() {
+                    useClientFromSelect();
+                });
+
+                // Signatory Select
+                $('#signatory-user-select').select2({
+                    ...select2Options,
+                    placeholder: "Choose signatory..."
+                }).on('change', function() {
+                    syncSignatoryData();
+                });
+
+                // Product Select
+                $('#product-select').select2({
+                    ...select2Options,
+                    placeholder: "Choose a product..."
+                }).on('change', function() {
+                    // Trigger the vanilla change event for product selection logic
+                    productSelect.dispatchEvent(new Event('change'));
+                });
+            }
         })();
     </script>
 @endpush

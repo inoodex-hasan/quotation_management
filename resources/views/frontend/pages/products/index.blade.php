@@ -85,7 +85,7 @@
                 <table class="table table-bordered table-hover">
                     <thead class="table-light">
                         <tr>
-                            <th>#</th>
+                            <th>SL.</th>
                             <th>
                                 <a class="text-decoration-none text-dark"
                                     href="{{ route('products.index', array_merge(request()->except('page'), ['sort_by' => 'name', 'sort_dir' => $nextDir('name')])) }}">

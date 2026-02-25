@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Feb 24, 2026 at 10:24 AM
+-- Generation Time: Feb 25, 2026 at 06:18 AM
 -- Server version: 8.4.3
 -- PHP Version: 8.3.26
 
@@ -42,7 +42,10 @@ CREATE TABLE `clients` (
 --
 
 INSERT INTO `clients` (`id`, `name`, `phone`, `email`, `address`, `created_at`, `updated_at`) VALUES
-(1, 'Ryans Computers', '01256423001', 'ryans@gmail.com', 'Dhaka', '2026-02-24 06:47:44', '2026-02-24 08:53:23');
+(1, 'Ryans Computers', '01256423001', 'ryans@gmail.com', 'Dhaka', '2026-02-24 06:47:44', '2026-02-24 08:53:23'),
+(4, 'Ryans Computers', '01256423001', 'abcd@gmail.com', 'Dhaka', '2026-02-25 04:40:56', '2026-02-25 04:40:56'),
+(5, 'sadfgsadf', '01256423001', 'abcd@gmail.com', 'Dhaka', '2026-02-25 04:44:29', '2026-02-25 04:44:29'),
+(6, 'sadfgsadf', '01256423001', 'abcd@gmail.com', 'Dhaka', '2026-02-25 04:54:39', '2026-02-25 04:54:39');
 
 -- --------------------------------------------------------
 
@@ -135,7 +138,10 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 (43, '2026_02_24_200000_add_details_to_quotations_table', 7),
 (44, '2026_02_24_210000_add_round_off_to_quotations_table', 8),
 (45, '2026_02_24_223146_create_company_details_table', 9),
-(46, '2026_02_24_233000_add_signatory_and_photo_to_company_details_table', 10);
+(46, '2026_02_24_233000_add_signatory_and_photo_to_company_details_table', 10),
+(47, '2026_02_25_095547_add_pdf_fields_to_quotations_table', 11),
+(48, '2026_02_25_100733_add_deleted_at_to_quotations_table', 12),
+(49, '2026_02_25_103024_add_company_logo_to_quotations_table', 13);
 
 -- --------------------------------------------------------
 
@@ -272,7 +278,25 @@ CREATE TABLE `products` (
 
 INSERT INTO `products` (`id`, `name`, `product_code`, `details`, `unit`, `price`, `created_at`, `updated_at`) VALUES
 (1, 'Canon Pixma G4010 All in One Wireless Ink Tank Printer', '123456', 'Test', 'piece', 7000.00, '2026-02-24 04:45:47', '2026-02-24 04:47:14'),
-(2, 'HP DeskJet Ink Advantage 2336 All-in-One Color Printer', '012345', NULL, 'piece', 9000.00, '2026-02-24 05:10:00', '2026-02-24 05:10:00');
+(2, 'HP DeskJet Ink Advantage 2336 All-in-One Color Printer', '012345', NULL, 'piece', 9000.00, '2026-02-24 05:10:00', '2026-02-24 05:10:00'),
+(3, 'Product A', 'P001', 'High-quality material', 'pcs', 120.50, '2026-02-25 05:04:55', '2026-02-25 05:04:55'),
+(4, 'Product B', 'P002', 'Durable and lightweight', 'pcs', 75.00, '2026-02-25 05:04:55', '2026-02-25 05:04:55'),
+(5, 'Product C', 'P003', 'Eco-friendly packaging', 'pcs', 150.00, '2026-02-25 05:04:55', '2026-02-25 05:04:55'),
+(6, 'Product D', 'P004', 'Compact design', 'pcs', 90.25, '2026-02-25 05:04:55', '2026-02-25 05:04:55'),
+(7, 'Product E', 'P005', 'Multi-purpose use', 'pcs', 110.00, '2026-02-25 05:04:55', '2026-02-25 05:04:55'),
+(8, 'Product F', 'P006', 'High-precision', 'pcs', 200.75, '2026-02-25 05:04:55', '2026-02-25 05:04:55'),
+(9, 'Product G', 'P007', 'Standard model', 'pcs', 60.00, '2026-02-25 05:04:55', '2026-02-25 05:04:55'),
+(10, 'Product H', 'P008', 'Heavy-duty', 'pcs', 250.00, '2026-02-25 05:04:55', '2026-02-25 05:04:55'),
+(11, 'Product I', 'P009', 'Energy-efficient', 'pcs', 180.00, '2026-02-25 05:04:55', '2026-02-25 05:04:55'),
+(12, 'Product J', 'P010', 'Lightweight and portable', 'pcs', 95.50, '2026-02-25 05:04:55', '2026-02-25 05:04:55'),
+(13, 'Product K', 'P011', 'Premium finish', 'pcs', 130.00, '2026-02-25 05:11:04', '2026-02-25 05:11:04'),
+(14, 'Product L', 'P012', 'Quick assembly', 'pcs', 85.00, '2026-02-25 05:11:04', '2026-02-25 05:11:04'),
+(15, 'Product M', 'P013', 'Waterproof design', 'pcs', 170.00, '2026-02-25 05:11:04', '2026-02-25 05:11:04'),
+(16, 'Product N', 'P014', 'Adjustable size', 'pcs', 140.25, '2026-02-25 05:11:04', '2026-02-25 05:11:04'),
+(17, 'Product O', 'P015', 'Scratch-resistant', 'pcs', 120.00, '2026-02-25 05:11:04', '2026-02-25 05:11:04'),
+(18, 'Product P', 'P016', 'Multipack available', 'pcs', 220.00, '2026-02-25 05:11:04', '2026-02-25 05:11:04'),
+(19, 'Product Q', 'P017', 'High durability', 'pcs', 160.00, '2026-02-25 05:11:04', '2026-02-25 05:11:04'),
+(20, 'Product R', 'P018', 'Compact & lightweight', 'pcs', 100.50, '2026-02-25 05:11:04', '2026-02-25 05:11:04');
 
 -- --------------------------------------------------------
 
@@ -298,15 +322,35 @@ CREATE TABLE `quotations` (
   `total_amount` decimal(10,2) NOT NULL,
   `status` enum('draft','sent','accepted','rejected','expired') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'draft',
   `created_at` timestamp NULL DEFAULT NULL,
-  `updated_at` timestamp NULL DEFAULT NULL
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `client_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `client_designation` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `client_address` text COLLATE utf8mb4_unicode_ci,
+  `client_phone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `client_email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `attention_to` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `body_content` text COLLATE utf8mb4_unicode_ci,
+  `terms_conditions` text COLLATE utf8mb4_unicode_ci,
+  `subject` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `company_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `logo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `signatory_name` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `signatory_designation` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `signatory_photo` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `company_phone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `company_email` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `company_website` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `company_address` text COLLATE utf8mb4_unicode_ci,
+  `additional_enclosed` text COLLATE utf8mb4_unicode_ci,
+  `deleted_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `quotations`
 --
 
-INSERT INTO `quotations` (`id`, `quotation_number`, `client_id`, `quotation_date`, `expiry_date`, `notes`, `sub_total`, `discount_amount`, `vat_percent`, `vat_amount`, `tax_percent`, `tax_amount`, `installation_charge`, `round_off`, `total_amount`, `status`, `created_at`, `updated_at`) VALUES
-(5, 'PK-20260224-0001', 1, '2026-02-24', '2026-03-11', 'Bill for Supplying of Products/Services', 7000.00, 50.00, 2.00, 139.00, 0.00, 0.00, 1000.00, 9.00, 8080.00, 'draft', '2026-02-24 09:54:11', '2026-02-24 09:54:11');
+INSERT INTO `quotations` (`id`, `quotation_number`, `client_id`, `quotation_date`, `expiry_date`, `notes`, `sub_total`, `discount_amount`, `vat_percent`, `vat_amount`, `tax_percent`, `tax_amount`, `installation_charge`, `round_off`, `total_amount`, `status`, `created_at`, `updated_at`, `client_name`, `client_designation`, `client_address`, `client_phone`, `client_email`, `attention_to`, `body_content`, `terms_conditions`, `subject`, `company_name`, `logo`, `signatory_name`, `signatory_designation`, `signatory_photo`, `company_phone`, `company_email`, `company_website`, `company_address`, `additional_enclosed`, `deleted_at`) VALUES
+(10, 'PK-20260225-0005', 6, '2026-02-25', '2026-03-12', 'Laborum occaecati eaque necessitatibus.', 97716.00, 169.00, 183.00, 178511.01, 0.00, 0.00, 140.00, 563.00, 275635.01, 'draft', '2026-02-25 04:54:39', '2026-02-25 04:54:39', 'sadfgsadf', 'Ullam laudantium impedit quia n', 'Dhaka', '01256423001', 'abcd@gmail.com', 'Quidem odit optio', 'Nostrum dolores accusamus enim autem inventore expedita animi reprehenderit tempore.', 'Voluptatem adipisci architecto voluptate fugiat quis possimus labore ut. Veniam magni alias. Odit repudiandae cum quae necessitatibus possimus quaerat sunt.\r\nTenetur totam officiis ex quibusdam odio. Nam aliquid assumenda cupiditate eius iure. Doloribus unde exercitationem laudantium repudiandae quos.\r\nOdio placeat nostrum voluptatem nemo et. Dolorem sit voluptatibus molestiae culpa eligendi hic neque. Nesciunt sapiente maxime.', 'Laborum occaecati eaque necessitatibus.', 'MacGyver - Krajcik', 'uploads/company_details/1771925646_logo-inoodex.png', 'Mr. Karim', 'Sales Person', 'frontend/users/20260224122504_SrA86C5rqb.png', 'Wiza - O\'Kon', 'your.email+fakedata80539@gmail.com', 'O\'Keefe, Gleichner and Schroeder', 'Mirpur, Pallabi, Dhaka', 'Vitae adipisci provident.', NULL);
 
 -- --------------------------------------------------------
 
@@ -331,7 +375,7 @@ CREATE TABLE `quotation_items` (
 --
 
 INSERT INTO `quotation_items` (`id`, `quotation_id`, `product_id`, `description`, `quantity`, `unit_price`, `total`, `created_at`, `updated_at`) VALUES
-(6, 5, 1, 'Test', 1, 7000.00, 7000.00, '2026-02-24 09:54:11', '2026-02-24 09:54:11');
+(11, 10, 2, 'description not available', 479, 204.00, 97716.00, '2026-02-25 04:54:39', '2026-02-25 04:54:39');
 
 -- --------------------------------------------------------
 
@@ -540,7 +584,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `clients`
 --
 ALTER TABLE `clients`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `company_details`
@@ -552,7 +596,7 @@ ALTER TABLE `company_details`
 -- AUTO_INCREMENT for table `migrations`
 --
 ALTER TABLE `migrations`
-  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=47;
+  MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=50;
 
 --
 -- AUTO_INCREMENT for table `permissions`
@@ -570,19 +614,19 @@ ALTER TABLE `personal_access_tokens`
 -- AUTO_INCREMENT for table `products`
 --
 ALTER TABLE `products`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=23;
 
 --
 -- AUTO_INCREMENT for table `quotations`
 --
 ALTER TABLE `quotations`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- AUTO_INCREMENT for table `quotation_items`
 --
 ALTER TABLE `quotation_items`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `roles`
